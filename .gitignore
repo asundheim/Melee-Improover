@@ -1,0 +1,39 @@
+# Build Folders (Visual Studio default)
+bin/
+obj/
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+
+# Build results
+*.exe
+*.dll
+*.pdb
+*.cache
+*.log
+*.db
+
+# NuGet
+packages/
+*.nupkg
+project.lock.json
+
+# Resharper / Rider
+_ReSharper*/
+*.DotSettings.user
+
+# Other
+*.tmp
+*.bak
+*.old
+*.orig
+*.ipch
+*.aps
+*.opensdf
+*.sdf
+*.VC.db
+
+# VS Code
+.vscode/

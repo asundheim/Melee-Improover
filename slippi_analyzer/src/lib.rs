@@ -862,10 +862,10 @@ pub extern "C" fn create_savestates( export_path_ptr: *const c_char, file_name_p
             start_frame as usize,num_frames as usize,&name,flags,).unwrap();
               //  .map_err(|e| format!("Could not write"));
         
-            let mut output_file = format!("{}\\{}.gci", export_path_str, name);
+            let output_file = std::path::Path::new(export_path_str).join(format!("{}.gci", name));
 
             std::fs::write(&output_file, &savestate);
-             println!("Savestate file '{}' created", &output_file);
+             println!("Savestate file '{}' created", output_file.display());
         }
     }
 }

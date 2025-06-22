@@ -151,7 +151,7 @@ struct GameInfo
     public byte version_patch;
 }
 
-namespace SlippiGUI
+namespace MeleeImprooverApp
 {
     public partial class Form1 : Form
     {

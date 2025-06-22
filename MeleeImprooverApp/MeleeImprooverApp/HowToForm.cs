@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Diagnostics;
 
-namespace SlippiGUI
+namespace MeleeImprooverApp
 {
     public partial class HowToForm : Form
     {

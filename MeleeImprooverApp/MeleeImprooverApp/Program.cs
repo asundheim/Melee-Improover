@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 
 
 
-namespace SlippiGUI
+namespace MeleeImprooverApp
 {
    
 

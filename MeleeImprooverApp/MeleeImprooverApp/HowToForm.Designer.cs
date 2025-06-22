@@ -1,4 +1,4 @@
-﻿namespace SlippiGUI
+﻿namespace MeleeImprooverApp
 {
     partial class HowToForm
     {

@@ -51,6 +51,8 @@ _ReSharper*/
 # Cargo output
 slippi_analyzer/target/
 
+slippi_analyzer/Cargo.lock
+
 # Cargo package files
 **/*.rs.bk
 

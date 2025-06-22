@@ -1,5 +1,4 @@
 # Fiction's Melee Improover 1.0
-Melee savestate automation tool
 Welcome to Fiction’s Melee Improover! This is a tool that allows players to create savestates of any situation during a live match by simply pressing your designated clip button. You can then use these savestates in Training Mode - Community Edition (TM-CE, formerly known as UnclePunch). The default clip button is D-Pad Down.
 
 **READ:** This application works best with the latest version of Training Mode - Community Edition (TM-CE) developed by Aitch and UnclePunch. [Download the latest version here](https://github.com/AlexanderHarrison/TrainingMode-CommunityEdition) (it’s free) and [join Aitch’s R&D Discord Server linked here](https://discord.gg/m4sbwGMJQF) to get the latest versions and contribute suggestions, ideas, and bug reports for both TM-CE and Fiction’s Melee Improover! 

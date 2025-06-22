@@ -1,30 +1,36 @@
-# Build Folders (Visual Studio default)
+#################################
+# Visual Studio (C# Project)
+#################################
+
+## Build results
 bin/
 obj/
 
-# Visual Studio files
+## VS-specific folders
 .vs/
+
+## User-specific files
 *.user
 *.suo
 
-# Build results
+## Build artifacts
 *.exe
 *.dll
 *.pdb
-*.cache
 *.log
+*.cache
 *.db
 
-# NuGet
+## NuGet
 packages/
 *.nupkg
 project.lock.json
 
-# Resharper / Rider
+## Resharper / Rider
 _ReSharper*/
 *.DotSettings.user
 
-# Other
+## Other
 *.tmp
 *.bak
 *.old
@@ -35,5 +41,47 @@ _ReSharper*/
 *.sdf
 *.VC.db
 
-# VS Code
+## VS Code
 .vscode/
+
+#################################
+# Rust (slippi_analyzer)
+#################################
+
+# Cargo output
+slippi_analyzer/target/
+
+# Cargo package files
+**/*.rs.bk
+
+# Rust/Cargo specific backup & temp files
+*.rs.bk
+*.rs~
+*.swp
+
+# IDE/Editor
+.idea/
+*.iml
+
+# VS Code (common to both projects)
+.slippi_analyzer/.vscode/
+
+# Environment config
+.env
+
+#################################
+# Global
+#################################
+
+# OS-generated files
+Thumbs.db
+ehthumbs.db
+.DS_Store
+*.tmp
+*.bak
+*.backup
+*.orig
+*.swp
+
+# Git backup
+*.orig

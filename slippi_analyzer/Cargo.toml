@@ -1,0 +1,12 @@
+[package]
+name = "slippi_analyzer"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name="slippi_analyzer"
+crate-type = ["cdylib"]
+
+[dependencies]
+slp_parser = { path = "../slp_parser-main"}
+tm_replay = {path = "../tm_replay"}

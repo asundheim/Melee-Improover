@@ -11,14 +11,12 @@ use std::cmp;
 
 #[repr(C)]
 
-pub struct CharacterColourSafe{
+pub struct CharacterColourSafe {
 
     pub character: u8,
 
     pub colour: u8,
-
 }
-
 
 
 #[repr(C)]
@@ -45,20 +43,15 @@ pub struct GameInfoSafe {
 
     pub timer: u32,
 
-
-
     /// Not the frame length. Add 123 to get that.
 
     pub duration: i32,
-
-    
 
     pub version_major: u8,
 
     pub version_minor: u8,
 
     pub version_patch: u8,
-
 }
 
 
@@ -347,7 +340,6 @@ pub extern "C" fn read_info( name_ptr: *const c_char ) -> *mut GameInfoSafe{
         folders: vec![],
         dir_hash: 0,
     };
-
     
     //let result = slp_parser::read_info(p);
     
@@ -491,7 +483,7 @@ pub extern "C" fn check_clips( name_ptr: *const c_char, out_len: *mut usize, hmn
 
    // let result = slp_parser::read_info(path_str);
 
-   let Ok((game, _)) = read_game(std::path::Path::new(path_str)) else { panic!(); };
+   let game = match read_game(std::path::Path::new(path_str)) { Ok(s) => s, Err(_) => panic!() };
 
     let mut clip_frames: Vec<i32> = Vec::new();
     if let Some((lo, hi)) = game.info.low_high_ports() {
@@ -581,8 +573,15 @@ pub extern "C" fn free_clip_array(ptr: *mut i32, len: usize) {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn create_savestates( export_path_ptr: *const c_char, file_name_ptr: *const c_char, game_name_ptr: *const c_char, hmn_player: i32, clip_length: i32, naming_style : i32, saveButtonType : i32 ) {
-
+pub extern "C" fn create_savestates( 
+    export_path_ptr: *const c_char, 
+    file_name_ptr: *const c_char, 
+    game_name_ptr: *const c_char, 
+    hmn_player: i32, 
+    clip_length: i32, 
+    naming_style : i32, 
+    saveButtonType : i32,  
+    startFrame : i32) {
     if export_path_ptr.is_null() {
         return;
     }
@@ -647,14 +646,11 @@ pub extern "C" fn create_savestates( export_path_ptr: *const c_char, file_name_p
     else {
         real_save_button = buttons_mask::D_PAD_DOWN;
     }
+    
+    let game = match read_game(std::path::Path::new(file_path_str)) { Ok(s) => s, Err(_) => panic!() };
 
-   // let result = slp_parser::read_info(path_str);
-
-   let Ok((game, _)) = read_game(std::path::Path::new(file_path_str)) else { panic!(); };
-
-
-   let mut stored_low = 0;
-   let mut stored_high = 0;
+    let mut stored_low = 0;
+    let mut stored_high = 0;
     let mut clip_frames: Vec<i32> = Vec::new();
     if let Some((lo, hi)) = game.info.low_high_ports() {
         let frames_lo = game.frames[lo].as_ref().unwrap();
@@ -662,106 +658,148 @@ pub extern "C" fn create_savestates( export_path_ptr: *const c_char, file_name_p
 
         stored_low = lo;
         stored_high = hi;
-        //let parsed_lo = parse_actions(frames_lo);
-        //let parsed_hi = parse_actions(frames_hi);
 
-        
         let mut start_frame = 0;
         let mut num_frames = 360;
         
         let mut name = String::from("new_recording");
         let mut flags = 0;
 
-       
-        if hmn_player == 0 {
-            for (i, f) in frames_lo.iter().enumerate() {
-            //println!("Frame {}, {}", i, f.analog_trigger_value);
-            if f.buttons_mask & real_save_button != 0
-            {
-                if i > 0 && frames_lo[i - 1].buttons_mask & real_save_button == 0 {
-                    //println!("Frame {}: D-Pad Right pressed", i);
-                    clip_frames.push( i as i32 );
+        if startFrame == -1 {
+            if hmn_player == 0 {
+                for (i, f) in frames_lo.iter().enumerate() {
+                    //println!("Frame {}, {}", i, f.analog_trigger_value);
+                    if f.buttons_mask & real_save_button != 0
+                    {
+                        if i > 0 && frames_lo[i - 1].buttons_mask & real_save_button == 0 {
+                            //println!("Frame {}: D-Pad Right pressed", i);
+                            clip_frames.push( i as i32 );
+                        }
+                        //println!("Frame {}: D-Pad Right pressed", i);
+                    }
                 }
-                //println!("Frame {}: D-Pad Right pressed", i);
+            }
+            else if hmn_player == 1 {
+                for (i, f) in frames_hi.iter().enumerate() {
+                    //println!("Frame {}, {}", i, f.analog_trigger_value);
+                    if f.buttons_mask & real_save_button != 0
+                    {
+                        if i > 0 && frames_hi[i - 1].buttons_mask & real_save_button == 0 {
+                            //println!("Frame {}: D-Pad Right pressed", i);
+                            clip_frames.push( i as i32 );
+                        }
+                        //println!("Frame {}: D-Pad Right pressed", i);
+                    }
+                }
             }
         }
-    }
-        else if hmn_player == 1 {
-            for (i, f) in frames_hi.iter().enumerate() {
-            //println!("Frame {}, {}", i, f.analog_trigger_value);
-            if f.buttons_mask & real_save_button != 0
-            {
-                if i > 0 && frames_hi[i - 1].buttons_mask & real_save_button == 0 {
-                    //println!("Frame {}: D-Pad Right pressed", i);
-                    clip_frames.push( i as i32 );
-                }
-                //println!("Frame {}: D-Pad Right pressed", i);
-            }
-        }
-    }
-
 
         let SHORT_NAMES: [&str; 28] = [
-        "Mario",
-        "Fox",
-        "CF",
-        "DK",
-        "Kirb",
-        "Bow",
-        "Link",
-        "Sheik",
-        "Ness",
-        "Peach",
-        "Popo",
-        "Nana",
-        "Pika",
-        "Samus",
-        "Yoshi",
-        "Puff",
-        "Mew2",
-        "Luigi",
-        "Marth",
-        "Zelda",
-        "YLink",
-        "Doc",
-        "Falco",
-        "Pichu",
-        "GaW",
-        "Ganon",
-        "Roy",
-        "XX",
-    ];
+            "Mario",
+            "Fox",
+            "CF",
+            "DK",
+            "Kirb",
+            "Bow",
+            "Link",
+            "Sheik",
+            "Ness",
+            "Peach",
+            "Popo",
+            "Nana",
+            "Pika",
+            "Samus",
+            "Yoshi",
+            "Puff",
+            "Mew2",
+            "Luigi",
+            "Marth",
+            "Zelda",
+            "YLink",
+            "Doc",
+            "Falco",
+            "Pichu",
+            "GaW",
+            "Ganon",
+            "Roy",
+            "XX",
+        ];
 
-    let mut shortStageName = String::new();
-    if game.info.stage == Stage::FinalDestination {
-        shortStageName = String::from("FD");
-    }
-    else if game.info.stage == Stage::Battlefield {
-        shortStageName = String::from("BF");
-    }
-    else if game.info.stage == Stage::YoshisStory {
-        shortStageName = String::from("YS");
-    }
-    else if game.info.stage == Stage::DreamLandN64 {
-        shortStageName = String::from("DL");
-    }
-    else if game.info.stage == Stage::PokemonStadium {
-        shortStageName = String::from("PS");
-    }
-    else if game.info.stage == Stage::FountainOfDreams {
-        shortStageName = String::from("FoD");
-    }
-    else {
-        shortStageName = String::from("XX");
+        let mut shortStageName = String::new();
+        if game.info.stage == Stage::FinalDestination {
+            shortStageName = String::from("FD");
+        }
+        else if game.info.stage == Stage::Battlefield {
+            shortStageName = String::from("BF");
+        }
+        else if game.info.stage == Stage::YoshisStory {
+            shortStageName = String::from("YS");
+        }
+        else if game.info.stage == Stage::DreamLandN64 {
+            shortStageName = String::from("DL");
+        }
+        else if game.info.stage == Stage::PokemonStadium {
+            shortStageName = String::from("PS");
+        }
+        else if game.info.stage == Stage::FountainOfDreams {
+            shortStageName = String::from("FoD");
+        }
+        else {
+            shortStageName = String::from("XX");
         
-    }
+        }
 
-     let mut default_clip_length = clip_length;//360;
-        for (i, clip_frame) in clip_frames.iter().enumerate() {
-            //println!("Value: {}", cmp::max( 0, number - 700));
-            start_frame = cmp::max( 0, *clip_frame - default_clip_length);
-            num_frames = cmp::min( *clip_frame, default_clip_length);
+        let mut default_clip_length = clip_length;//360;
 
+        if startFrame == -1 {
+            for (i, clip_frame) in clip_frames.iter().enumerate() {
+                //println!("Value: {}", cmp::max( 0, number - 700));
+                start_frame = cmp::max( 0, *clip_frame - default_clip_length);
+                num_frames = cmp::min( *clip_frame, default_clip_length);
+
+                if naming_style == 0 {
+                    let mut ind = 0;
+                    let mut opp = 0;
+                    if hmn_player == 0
+                    {
+                        ind = stored_low;
+                        opp = stored_high;
+                    }
+                    else if hmn_player ==1
+                    {
+                        ind = stored_high;
+                        opp = stored_low;
+                    }
+
+                    name = format!("{}-{}-{}-{}-f{}", SHORT_NAMES[game.info.starting_character_colours[ind].unwrap().character() as usize].to_string(),
+                            SHORT_NAMES[game.info.starting_character_colours[opp].unwrap().character() as usize].to_string(),
+                            shortStageName, i + 1, start_frame);//month, day, year - 2000, hour, minute, i + 1 );//, day, year, hour, minute
+                }
+                else if naming_style == 1 {
+                    name =  format!("{}-{}", game_name_str, i + 1);
+                }
+                else if naming_style == 2 {
+                    name =  format!("{}-f{}", game_name_str, start_frame);
+                }
+                else {
+                    name = format!("error");
+                }
+        
+                let mut hport = HumanPort::HumanLowPort;
+                if hmn_player == 1 {
+                    hport = HumanPort::HumanHighPort;
+                }
+
+                let savestate: Vec<u8> = construct_tm_replay_from_slp(&game,hport,
+                start_frame as usize,num_frames as usize,&name,flags,).unwrap();
+        
+                let output_file = std::path::Path::new(export_path_str).join(format!("{}.gci", name));
+
+                std::fs::write(&output_file, &savestate);
+                println!("Savestate file '{}' created", output_file.display());
+            }
+        }
+        else {
             if naming_style == 0 {
                 let mut ind = 0;
                 let mut opp = 0;
@@ -776,100 +814,38 @@ pub extern "C" fn create_savestates( export_path_ptr: *const c_char, file_name_p
                     opp = stored_low;
                 }
 
-
-                name = format!("{}_{}_{}_{}_f{}", SHORT_NAMES[game.info.starting_character_colours[ind].unwrap().character() as usize].to_string(),
+                name = format!("{}-{}-{}-{}-f{}", SHORT_NAMES[game.info.starting_character_colours[ind].unwrap().character() as usize].to_string(),
                         SHORT_NAMES[game.info.starting_character_colours[opp].unwrap().character() as usize].to_string(),
-                        shortStageName, i + 1, start_frame);//month, day, year - 2000, hour, minute, i + 1 );//, day, year, hour, minute
-
-                
+                        shortStageName, 1, start_frame);//month, day, year - 2000, hour, minute, i + 1 );//, day, year, hour, minute
             }
             else if naming_style == 1 {
-                name =  format!("{}_{}", game_name_str, i + 1);
+                name =  format!("{}-{}", game_name_str, 1);
             }
-            else if naming_style == 2 
-            {
-                name =  format!("{}_f{}", game_name_str, start_frame);
+            else if naming_style == 2 {
+                name =  format!("{}-f{}", game_name_str, start_frame);
             }
-            // else if naming_style == 2 || naming_style == 3 {
-            //     let mut ind = 0;
-            //     let mut opp = 0;
-            //     if hmn_player == 0
-            //     {
-            //         ind = stored_low;
-            //         opp = stored_high;
-            //     }
-            //     else if hmn_player ==1
-            //     {
-            //         ind = stored_high;
-            //         opp = stored_low;
-            //     }
-
-            //     let fields = game.info.start_time.fields();
-
-            //     let mut month = fields.month as i32;
-            //     let mut year = fields.year as i32;
-            //     let mut day = fields.day as i32;
-            //     //let mut day::u8 = fields.day;
-            //     let mut hour = fields.hour as i32;
-            //     let mut minute = fields.minute as i32;
-            //     let mut ampm = String::new();
-
-            //     if naming_style == 2 {
-            //              name = format!("{}_{}_{}_{}{}{}{}{}_{}", SHORT_NAMES[game.info.starting_character_colours[ind].unwrap().character() as usize].to_string(),
-            //     SHORT_NAMES[game.info.starting_character_colours[opp].unwrap().character() as usize].to_string(),
-            //             shortStageName, month, day, year - 2000, hour, minute, i + 1 );//, day, year, hour, minute, ampm );
-            //     }
-            //     else if naming_style == 3 {
-            //             name = format!("{}_{}_{}_{}{}{}{}{}_f{}", SHORT_NAMES[game.info.starting_character_colours[ind].unwrap().character() as usize].to_string(),
-            //     SHORT_NAMES[game.info.starting_character_colours[opp].unwrap().character() as usize].to_string(),
-            //             shortStageName, month, day, year - 2000, hour, minute, clip_frame );
-            //     }
-               
-            //         // if hour >= 12 {
-            //     //     ampm = String::from("pm");
-            //     //     if hour > 12 {
-            //     //         hour -= 12;
-            //     //     }
-            //     // }
-            //     // else {
-            //     //     ampm = String::from("am");
-            //     // }
-
-            //     //let char1 = String::new();
-            //     //let char2
-            //    // name = format!( "{}-{}-{} {}:{}{}", year, month, day, hour, minute, ampm);
-            //     //let mut char1 = String::new();
-            //     //char1 = String::from( );
-            //     //let char2 = String::from(SHORT_NAMES[game.info.starting_character_colours[opp].unwrap().character() as usize].to_string());
-            //     //let char1 = String::from( "test");
-            //     //let char2 = String::from("Test2");
-            //     //let char3 = String::from( "test3");
-
-
-            // }
             else {
                 name = format!("error");
             }
-
-            
-            
-
+        
             let mut hport = HumanPort::HumanLowPort;
             if hmn_player == 1 {
                 hport = HumanPort::HumanHighPort;
             }
+
+            start_frame = cmp::max( 0, startFrame - default_clip_length);
+            num_frames = cmp::min( startFrame, default_clip_length);
+
             let savestate: Vec<u8> = construct_tm_replay_from_slp(&game,hport,
-            start_frame as usize,num_frames as usize,&name,flags,).unwrap();
-              //  .map_err(|e| format!("Could not write"));
+            start_frame as usize, num_frames as usize,&name,flags,).unwrap();
         
             let output_file = std::path::Path::new(export_path_str).join(format!("{}.gci", name));
 
             std::fs::write(&output_file, &savestate);
-             println!("Savestate file '{}' created", output_file.display());
+            println!("Savestate file '{}' created", output_file.display());
         }
     }
 }
-
 
 fn is_not_entry_state(state: ActionState) -> bool {
     match state {

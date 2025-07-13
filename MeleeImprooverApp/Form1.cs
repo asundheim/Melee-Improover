@@ -1,24 +1,24 @@
-ï»¿using System;
-using System.Collections.Generic;
+using Microsoft.WindowsAPICodePack.Dialogs;
+using Slippi.NET;
+using Slippi.NET.Console;
+using Slippi.NET.Console.Types;
+using Slippi.NET.Slp.Reader.File;
+using Slippi.NET.Slp.Writer;
+using Slippi.NET.Stats;
+using Slippi.NET.Stats.Types;
+using Slippi.NET.Stats.Utils;
+using Slippi.NET.Types;
+using Slippi.NET.Utils;
 using System.ComponentModel;
 using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.Runtime.InteropServices;
-using System.IO;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Text;
+using LibCharacter = Slippi.NET.Melee.Types.Character;
 
 //using System.Buffers.Binary;
 
-using Microsoft.WindowsAPICodePack.Dialogs;
-
-public enum Stage : UInt32
+public enum Stage : byte
 {
     FountainOfDreams = 002,
     PokemonStadium = 003,
@@ -82,9 +82,6 @@ public enum Character : byte
     Roy = 26,
 }
 
-
-
-
 public enum CharacterColour : UInt32
 {
     Red = 0,
@@ -95,7 +92,9 @@ public enum CharacterColour : UInt32
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct OptionalCharacterColour
 {
+    [MarshalAs(UnmanagedType.U1)]
     public Character character;
+
     public byte color;
 }
 
@@ -127,24 +126,29 @@ public struct ConnectCode
 [StructLayout(LayoutKind.Sequential)]
 struct GameInfo
 {
+    [MarshalAs(UnmanagedType.U1)]
     public Stage stage;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-    public byte [] ports_used;
+    public byte[] ports_used;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
     public OptionalCharacterColour[] starting_character_colours;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-    public Name [] names;
+    public Name[] names;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
     public ConnectCode[] connect_codes;
 
-    public UInt64 start_time;
+    [MarshalAs(UnmanagedType.U8)]
+    public ulong start_time;
 
-    public UInt32 timer;
-    public Int32 duration;
+    [MarshalAs(UnmanagedType.U4)]
+    public uint timer;
+
+    [MarshalAs(UnmanagedType.I4)]
+    public int duration;
 
     public byte version_major;
     public byte version_minor;
@@ -247,7 +251,7 @@ namespace MeleeImprooverApp
             namingStyleBox.Items.Add("Game Info");
             namingStyleBox.Items.Add("Name + State Number");
             namingStyleBox.Items.Add("Name + Frame Number");
-            
+
 
             namingStyleBox.SelectedIndexChanged -= frameComboBox_SelectedIndexChanged;
 
@@ -255,7 +259,7 @@ namespace MeleeImprooverApp
 
             namingStyleBox.SelectedIndexChanged += frameComboBox_SelectedIndexChanged;
 
-            
+
             //dataGridView1.ContextMenuStrip = exportMenuStrip;
             //    public string path { get; set; }
             //public string gameName { get; set; }
@@ -297,16 +301,18 @@ namespace MeleeImprooverApp
 
             ReadSettings();
 
-            if( importFolderPath == null )
+            if (importFolderPath == null)
             {
                 openImportButton.Hide();
             }
 
-            if( exportFolderPath == null )
+            if (exportFolderPath == null)
             {
                 openExportButton.Hide();
             }
-            
+
+            DolphinToolTip.AutomaticDelay = 0;
+            DolphinToolTip.InitialDelay = 0;
             //AddGameInfoColumn("Date and Time", "dateAndTime", 100, true);
             //AddGameInfoColumn("Match Length", "matchLength", 100, true);
 
@@ -314,9 +320,9 @@ namespace MeleeImprooverApp
             //public UInt32 clipLength { get; set; }
         }
 
-        private void ExportFromPlayer( int pIndex )
+        private void ExportFromPlayer(int pIndex)
         {
-            if( exportFolderPath == null )
+            if (exportFolderPath == null)
             {
                 MessageBox.Show("export path was empty");
                 return;
@@ -326,7 +332,7 @@ namespace MeleeImprooverApp
             {
                 string exporTest = Path.GetFullPath(exportFolderPath);
             }
-            catch( Exception )
+            catch (Exception)
             {
                 MessageBox.Show("export path was invalid");
             }
@@ -338,13 +344,13 @@ namespace MeleeImprooverApp
             if (int.TryParse(clipLengthTextBox.Text.Trim(), out foundLength))
             {
                 clipLength = foundLength;
-                // It's a valid integer â€” use it
+                // It's a valid integer — use it
                 //Console.WriteLine($"User entered: {parsedValue}");
             }
             else
             {
                 MessageBox.Show("clip length was not valid. Setting to default");
-                // Invalid input â€” optionally do nothing or handle it
+                // Invalid input — optionally do nothing or handle it
                 // Console.WriteLine("Invalid number, ignoring input.");
 
                 clipLengthTextBox.TextChanged -= clipLengthTextBox_TextChanged;
@@ -402,12 +408,12 @@ namespace MeleeImprooverApp
             //if (int.TryParse(clipLengthTextBox.Text.Trim(), out foundLength))
             //{
             //    clipLength = foundLength;
-            //    // It's a valid integer â€” use it
+            //    // It's a valid integer — use it
             //    //Console.WriteLine($"User entered: {parsedValue}");
             //}
             //else
             //{
-            //    // Invalid input â€” optionally do nothing or handle it
+            //    // Invalid input — optionally do nothing or handle it
             //    // Console.WriteLine("Invalid number, ignoring input.");
             //    clipLengthTextBox.Text = clipLength.ToString();
             //}
@@ -433,9 +439,9 @@ namespace MeleeImprooverApp
             //}
 
             //MessageBox.Show("Created " + totalExportedClips + " save states in " + exportFolderPath);
-    }
+        }
 
-        private void CreateSaveStates(string exportFolder, string currSlp, string gameName, int clipLength, int pIndex)
+        private void CreateSaveStates(string exportFolder, string currSlp, string gameName, int clipLength, int pIndex, int startFrame = -1)
         {
             byte[] exportFolder_utf8 = Encoding.UTF8.GetBytes(exportFolder + "\0");
             IntPtr exportFolderPtr = Marshal.AllocHGlobal(exportFolder_utf8.Length);
@@ -450,12 +456,12 @@ namespace MeleeImprooverApp
             Marshal.Copy(gameName_utf8, 0, gameNamePtr, gameName_utf8.Length);
 
             Program.create_savestates(exportFolderPtr, slpPathPtr, gameNamePtr, pIndex, clipLength, namingStyleBox.SelectedIndex,
-                saveStateButtonComboBox.SelectedIndex);
+                saveStateButtonComboBox.SelectedIndex, startFrame);
 
             //MessageBox.Show("Created " + listBox1.Items.Count + " save states in " + exportFolder + " with game name " + gameName + " with clip length " + clipLength);
         }
 
-        private void SetInfo( int index )
+        private void SetInfo(int index)
         {
             AddEntry(slpPaths[index]);
         }
@@ -463,10 +469,10 @@ namespace MeleeImprooverApp
         private void AddEntry(string path)
         {
             IntPtr namePtr = Marshal.StringToHGlobalAnsi(path);
-
+            IntPtr gameInfoPtr = IntPtr.Zero;
             try
             {
-                IntPtr gameInfoPtr = Program.read_info(namePtr);
+                gameInfoPtr = Program.read_info(namePtr);
 
                 if (gameInfoPtr == IntPtr.Zero)
                 {
@@ -475,180 +481,20 @@ namespace MeleeImprooverApp
                 }
 
                 GameInfo test = Marshal.PtrToStructure<GameInfo>(gameInfoPtr);
-
-                int lowPortIndex = -1;
-                int highPortIndex = -1;
-                for( int i = 0; i < 4; ++i )
-                {
-                    if( test.ports_used[i] > 0 )
-                    {
-                        if( lowPortIndex == -1 )
-                        {
-                            lowPortIndex = i;
-                        }
-                        else
-                        {
-                            highPortIndex = i;
-                            break;
-                        }
-                    }
-                }
-
-                //should always be two ports though
-                if( lowPortIndex == -1 || highPortIndex == -1 )
+                SlippiEntry se = CreateSlippiEntry(path, test);
+                if (se is null)
                 {
                     return;
                 }
-
-                SlippiEntry se = new SlippiEntry();
-                se.filePath = path;
-                se.gameName = Path.GetFileNameWithoutExtension(path);
-                se.p1 = test.starting_character_colours[lowPortIndex].character;
-                se.p2 = test.starting_character_colours[highPortIndex].character;
-                se.stage = test.stage;
-
-                //only support competitive stages
-                if (se.stage != Stage.FountainOfDreams && se.stage != Stage.PokemonStadium
-                   && se.stage != Stage.YoshisStory && se.stage != Stage.DreamLandN64
-                   && se.stage != Stage.Battlefield && se.stage != Stage.FinalDestination)
-                {
-                    return;
-                }
-
-                string shortStage = "";
-                switch( se.stage )
-                {
-                    case Stage.FinalDestination:
-                        shortStage = "FD";
-                        break;
-                    case Stage.FountainOfDreams:
-                        shortStage = "FoD";
-                        break;
-                    case Stage.PokemonStadium:
-                        shortStage = "PS";
-                        break;
-                    case Stage.YoshisStory:
-                        shortStage = "YS";
-                        break;
-                    case Stage.DreamLandN64:
-                        shortStage = "DL";
-                        break;
-                    case Stage.Battlefield:
-                        shortStage = "BF";
-                        break;
-                    default:
-                        shortStage = "XX";
-                        break;
-                }
-
-                se.stageString = shortStage;
-
-                se.clipFramesP1 = CheckForClips(path, 0);
-                se.clipFramesP2 = CheckForClips(path, 1);
-
-                se.numClipsP1 = se.clipFramesP1.Length;
-                se.numClipsP2 = se.clipFramesP2.Length;
-
-                if( se.numClipsP1 == 0 && se.numClipsP2 == 0 )
-                {
-                    return;
-                }
-
-                //se.p1ConnectCode = test.connect_codes[0].bytes.ToArray().ToString();
-                //se.p2ConnectCode = test.connect_codes[1].bytes.ToString();
-
-                string[] codes = new string[4];
-                for (int i = 0; i < 4; i++)
-                {
-                    codes[i] = System.Text.Encoding.ASCII
-                        .GetString(test.connect_codes[i].bytes)
-                        .TrimEnd('\0'); // Remove null terminator if present
-                }
-
-                int gameSeconds = (test.duration + 123) / 60;//(test.duration + 123) / 60;
-                int minutes = gameSeconds / 60;
-                int seconds = gameSeconds % 60;
-                se.duration = $"{minutes}m {seconds}s";//String.Format("{}m {}s", minutes, seconds); //gameLen.ToString();//test.version_major + " " + test.version_minor + " " + test.version_patch;//SwapEndian(test.timer).ToString();
-                                                       //DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(se.dateAndTime);
-                                                       //DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-
-                se.p1ConnectCode = Encoding.GetEncoding("shift_jis").GetString(test.connect_codes[lowPortIndex].bytes);
-                se.p2ConnectCode = Encoding.GetEncoding("shift_jis").GetString(test.connect_codes[highPortIndex].bytes);
-
-                if( se.p1ConnectCode[0] == '\0' || se.p2ConnectCode[0] == '\0')
-                {
-                    se.p1ConnectCode = null;
-                    se.p2ConnectCode = null;
-                }
-
-                se.p1String = ShortNames[(int)se.p1];
-                se.p2String = ShortNames[(int)se.p2];
-
-                if( se.p1String == se.p2String )
-                {
-                    string p1Color = GetCharacterColorStr(se.p1, test.starting_character_colours[lowPortIndex].color);
-                    string p2Color = GetCharacterColorStr(se.p2, test.starting_character_colours[highPortIndex].color);
-
-                    if( p1Color != "" )
-                    {
-                        se.p1String = se.p1String + "(" + p1Color + ")";
-                    }
-
-                    if (p2Color != "")
-                    {
-                        se.p2String = se.p2String + "(" + p2Color + ")";
-                    }
-                }
-
-
-                se.stage = Stage.FinalDestination;
-                // Add seconds to epoch
-                //DateTime dateTime = epoch.AddTicks((long)test.start_time);//.ToLocalTime();
-                TimeFields tm = new TimeFields(test.start_time);
-                se.dateAndTime = tm.ToString();//tm.ToString();//test.timer.ToString();//dateTime.ToString();//dateTime.ToString();
-
-                
-
-                //se.dateAndTime = se.p1ConnectCode + ", " + se.p2ConnectCode;
-                //se.dateAndTime = "test";//$"Date: {dateTime:yyyy-MM-dd HH:mm:ss}";
-
-                Program.free_info(gameInfoPtr);
-
-                if( se.dateAndTime == "Invalid Date" || se.dateAndTime == "INVALID" )
-                {
-                    //file metadata is corrupted
-                    return;
-                }
-
 
                 if (populateCts.IsCancellationRequested)
-                    return;
-
-               
-
-                //this.Invoke(() => entries.Add(se));
-                this.Invoke((MethodInvoker)(() => allEntries.Add(se)));
-                this.Invoke((MethodInvoker)(() => filteredEntries.Add(se)));
-                this.Invoke(new Action(() =>
                 {
-                    int totalClipsOverall = 0;
-                    foreach (SlippiEntry entry in filteredEntries)
-                    {
-                        if (entry != null)
-                        {
-                            totalClipsOverall += entry.numClipsP1;
-                            totalClipsOverall += entry.numClipsP2;
-                        }
-                    }
+                    return;
+                }
 
-
-                    numDisplayedFilesLabel.Text = "Displayed files: " + filteredEntries.Count.ToString()
-                    + "     Total files: " + slpPaths.Length.ToString()
-                    + "     Total savestates found: " + totalClipsOverall;
-                }));
+                AddSlippiEntry(se);
             }
-            catch( Exception e )
+            catch (Exception e)
             {
                 MessageBox.Show("here: " + e);
                 //some slippi files are corrupted or badly written (raw tag has 0 size)
@@ -656,11 +502,214 @@ namespace MeleeImprooverApp
             }
             finally
             {
+                if (gameInfoPtr != IntPtr.Zero)
+                {
+                    Program.free_info(gameInfoPtr);
+                }
+
                 Marshal.FreeHGlobal(namePtr);
             }
         }
 
-        private int[] CheckForClips( string path, int pIndex )
+        private void AddSlippiEntry(SlippiEntry se)
+        {
+            //this.Invoke(() => entries.Add(se));
+            this.Invoke((MethodInvoker)(() => allEntries.Add(se)));
+            this.Invoke((MethodInvoker)(() => filteredEntries.Add(se)));
+            this.Invoke(new Action(() =>
+            {
+                int totalClipsOverall = 0;
+                foreach (SlippiEntry entry in filteredEntries)
+                {
+                    if (entry != null)
+                    {
+                        totalClipsOverall += entry.numClipsP1;
+                        totalClipsOverall += entry.numClipsP2;
+                    }
+                }
+
+
+                numDisplayedFilesLabel.Text = "Displayed files: " + filteredEntries.Count.ToString()
+                + "     Total files: " + slpPaths?.Length.ToString() ?? "0"
+                + "     Total savestates found: " + totalClipsOverall;
+            }));
+        }
+
+        private SlippiEntry CreateSlippiEntry(string path, GameInfo gameInfo)
+        {
+            int lowPortIndex = -1;
+            int highPortIndex = -1;
+            for (int i = 0; i < 4; ++i)
+            {
+                if (gameInfo.ports_used[i] > 0)
+                {
+                    if (lowPortIndex == -1)
+                    {
+                        lowPortIndex = i;
+                    }
+                    else
+                    {
+                        highPortIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            //should always be two ports though
+            if (lowPortIndex == -1 || highPortIndex == -1)
+            {
+                return null;
+            }
+
+            return CreateSlippiEntry(path,
+                          p1Index: lowPortIndex,
+                          p2Index: highPortIndex,
+                          p1Character: gameInfo.starting_character_colours[lowPortIndex].character,
+                          p2Character: gameInfo.starting_character_colours[highPortIndex].character,
+                          p1Color: gameInfo.starting_character_colours[lowPortIndex].color,
+                          p2Color: gameInfo.starting_character_colours[highPortIndex].color,
+                          stage: gameInfo.stage,
+                          p1ConnectCode: StringUtils.Instance.ReadShiftJIS(gameInfo.connect_codes[lowPortIndex].bytes),
+                          p2ConnectCode: StringUtils.Instance.ReadShiftJIS(gameInfo.connect_codes[highPortIndex].bytes),
+                          startTime: gameInfo.start_time,
+                          lastFrame: gameInfo.duration);
+        }
+
+        private SlippiEntry CreateSlippiEntry(string path,
+            int p1Index,
+            int p2Index,
+            Character p1Character,
+            Character p2Character,
+            int p1Color,
+            int p2Color,
+            Stage stage,
+            string p1ConnectCode,
+            string p2ConnectCode,
+            ulong startTime,
+            int lastFrame,
+            bool isPlayback = false)
+        {
+            SlippiEntry se = new SlippiEntry();
+            se.filePath = path;
+            se.gameName = System.IO.Path.GetFileNameWithoutExtension(path);
+            se.p1Index = p1Index;
+            se.p2Index = p2Index;
+            se.p1 = p1Character;
+            se.p2 = p2Character;
+            se.stage = stage;
+
+            //only support competitive stages
+            if (se.stage != Stage.FountainOfDreams && se.stage != Stage.PokemonStadium
+               && se.stage != Stage.YoshisStory && se.stage != Stage.DreamLandN64
+               && se.stage != Stage.Battlefield && se.stage != Stage.FinalDestination)
+            {
+                return null;
+            }
+
+            string shortStage = "";
+            switch (se.stage)
+            {
+                case Stage.FinalDestination:
+                    shortStage = "FD";
+                    break;
+                case Stage.FountainOfDreams:
+                    shortStage = "FoD";
+                    break;
+                case Stage.PokemonStadium:
+                    shortStage = "PS";
+                    break;
+                case Stage.YoshisStory:
+                    shortStage = "YS";
+                    break;
+                case Stage.DreamLandN64:
+                    shortStage = "DL";
+                    break;
+                case Stage.Battlefield:
+                    shortStage = "BF";
+                    break;
+                default:
+                    shortStage = "XX";
+                    break;
+            }
+
+            se.stageString = shortStage;
+
+            se.clipFramesP1 = CheckForClips(path, 0);
+            se.clipFramesP2 = CheckForClips(path, 1);
+
+            se.numClipsP1 = se.clipFramesP1.Length;
+            se.numClipsP2 = se.clipFramesP2.Length;
+
+            if (!isPlayback && (se.numClipsP1 == 0 && se.numClipsP2 == 0))
+            {
+                return null;
+            }
+
+            //se.p1ConnectCode = test.connect_codes[0].bytes.ToArray().ToString();
+            //se.p2ConnectCode = test.connect_codes[1].bytes.ToString();
+
+            //string[] codes = new string[4];
+            //for (int i = 0; i < 4; i++)
+            //{
+            //    codes[i] = System.Text.Encoding.ASCII
+            //        .GetString(test.connect_codes[i].bytes)
+            //        .TrimEnd('\0'); // Remove null terminator if present
+            //}
+
+            int gameSeconds = (lastFrame + 123) / 60;//(test.duration + 123) / 60;
+            int minutes = gameSeconds / 60;
+            int seconds = gameSeconds % 60;
+            se.duration = $"{minutes}m {seconds}s";//String.Format("{}m {}s", minutes, seconds); //gameLen.ToString();//test.version_major + " " + test.version_minor + " " + test.version_patch;//SwapEndian(test.timer).ToString();
+                                                   //DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(se.dateAndTime);
+                                                   //DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+
+            se.p1ConnectCode = p1ConnectCode;
+            se.p2ConnectCode = p2ConnectCode;
+
+            if (se.p1ConnectCode.Length == 0 || se.p2ConnectCode.Length == 0 || se.p1ConnectCode[0] == '\0' || se.p2ConnectCode[0] == '\0')
+            {
+                se.p1ConnectCode = null;
+                se.p2ConnectCode = null;
+            }
+
+            se.p1String = MakeCharacterString(se.p1, p1Color, se.p2);
+            se.p2String = MakeCharacterString(se.p2, p1Color, se.p1);
+
+            se.stage = Stage.FinalDestination;
+            // Add seconds to epoch
+            //DateTime dateTime = epoch.AddTicks((long)test.start_time);//.ToLocalTime();
+            TimeFields tm = new TimeFields(startTime);
+            se.dateAndTime = tm.ToString();//tm.ToString();//test.timer.ToString();//dateTime.ToString();//dateTime.ToString();
+
+            //se.dateAndTime = se.p1ConnectCode + ", " + se.p2ConnectCode;
+            //se.dateAndTime = "test";//$"Date: {dateTime:yyyy-MM-dd HH:mm:ss}";
+
+            if (!isPlayback && (se.dateAndTime == "Invalid Date" || se.dateAndTime == "INVALID"))
+            {
+                //file metadata is corrupted
+                return null;
+            }
+
+            return se;
+        }
+
+        private string MakeCharacterString(Character character, int color, Character other)
+        {
+            string playerString = ShortNames[(int)character];
+            if (character == other)
+            {
+                string colorName = GetCharacterColorStr(character, color);
+                if (!string.IsNullOrEmpty(colorName))
+                {
+                    playerString = $"{playerString} ({colorName})";
+                }
+            }
+
+            return playerString;
+        }
+
+        private int[] CheckForClips(string path, int pIndex)
         {
             byte[] utf8 = Encoding.UTF8.GetBytes(path + "\0");
             IntPtr namePtr = Marshal.AllocHGlobal(utf8.Length);
@@ -695,7 +744,7 @@ namespace MeleeImprooverApp
 
                 return result;
             }
-            catch( Exception e )
+            catch (Exception e)
             {
                 MessageBox.Show("here: " + e);
             }
@@ -759,7 +808,7 @@ namespace MeleeImprooverApp
         //        {
         //            slpPaths = slpPaths.Union(files).ToArray();
         //        }
-                
+
 
         //        SetAllInfo();
         //    }
@@ -780,7 +829,7 @@ namespace MeleeImprooverApp
             col.DataPropertyName = propertyName; // Must match property in your class
             col.Width = width;
             col.ReadOnly = readOnly;
-            if( propertyName == "gameName")
+            if (propertyName == "gameName")
             {
                 col.MaxInputLength = 20;
             }
@@ -826,7 +875,7 @@ namespace MeleeImprooverApp
 
                 }
             }
-            catch( FileNotFoundException ex )
+            catch (FileNotFoundException ex)
             {
                 MessageBox.Show($"Folder not found: {ex.FileName}");
             }
@@ -841,7 +890,7 @@ namespace MeleeImprooverApp
                     .OrderByDescending(f => File.GetCreationTime(f))
                     .ToList();
 
-               
+
 
                 if (files.Count > 0)
                 {
@@ -853,16 +902,16 @@ namespace MeleeImprooverApp
                     //filteredEntries.Clear();
 
                     this.Invoke((MethodInvoker)(() => dataGridView1.DataSource = filteredEntries));
-                    
 
-                    for( int i = 0; i < slpPaths.Length; ++i )
+
+                    for (int i = 0; i < slpPaths.Length; ++i)
                     {
                         if (token.IsCancellationRequested)
                             return;
 
                         SetInfo(i);
 
-                        
+
                     }
                 }
             }
@@ -884,7 +933,7 @@ namespace MeleeImprooverApp
             if (int.TryParse(clipLengthTextBox.Text.Trim(), out foundLength))
             {
                 clipLength = foundLength;
-                // It's a valid integer â€” use it
+                // It's a valid integer — use it
                 //Console.WriteLine($"User entered: {parsedValue}");
             }
             else
@@ -897,19 +946,19 @@ namespace MeleeImprooverApp
             }
 
             string imp = "NONE";
-            if( importFolderPath != null )
+            if (importFolderPath != null)
             {
                 imp = importFolderPath;
             }
 
             string outp = "NONE";
-            if( exportFolderPath != null )
+            if (exportFolderPath != null)
             {
                 outp = exportFolderPath;
             }
 
 
-            string text = outp + "\n" + imp + "\n" + saveStateButtonComboBox.SelectedIndex.ToString() + "\n" +  namingStyleBox.SelectedIndex.ToString() + "\n" + clipLength.ToString();
+            string text = outp + "\n" + imp + "\n" + saveStateButtonComboBox.SelectedIndex.ToString() + "\n" + namingStyleBox.SelectedIndex.ToString() + "\n" + clipLength.ToString();
             File.WriteAllText("config.txt", text);
         }
 
@@ -921,18 +970,18 @@ namespace MeleeImprooverApp
 
                 if (configLines.Length < 5)
                 {
-                   // Console.WriteLine("Error: The config.txt file must contain at least two lines.");
+                    // Console.WriteLine("Error: The config.txt file must contain at least two lines.");
                     // You can also throw an exception or handle this differently
                     return;
                 }
 
-                if( configLines[0] != "NONE")
+                if (configLines[0] != "NONE")
                 {
                     exportFolderPath = configLines[0];
                 }
-                
 
-                if( configLines[1] != "NONE")
+
+                if (configLines[1] != "NONE")
                 {
                     importFolderPath = configLines[1];
                 }
@@ -983,7 +1032,7 @@ namespace MeleeImprooverApp
                 clipLengthTextBox.TextChanged += clipLengthTextBox_TextChanged;
 
 
-                
+
 
                 exportLabel.Text = "Export Folder: " + exportFolderPath;
                 exportPathToolTip.SetToolTip(exportLabel, exportFolderPath);
@@ -1000,7 +1049,7 @@ namespace MeleeImprooverApp
                 //Refresh();
                 //Application.DoEvents();
 
-                
+
 
                 dataGridView1.DataSource = filteredEntries;
 
@@ -1008,7 +1057,7 @@ namespace MeleeImprooverApp
                 await Task.Yield();              // Yield back to UI thread to finish painting
                 await Task.Delay(250);
 
-                
+
 
                 UpdateGrid();
 
@@ -1040,18 +1089,18 @@ namespace MeleeImprooverApp
                     isValid = false;
                 }
 
-                if( isValid )
+                if (isValid)
                 {
                     isValid = newFileName.IndexOfAny(Path.GetInvalidFileNameChars()) == -1;
                 }
-                
+
 
                 if (!isValid)
                 {
                     entry.gameName = originalGameName;
                     return;
                 }
-                    
+
 
                 string newPath = Path.Combine(Path.GetDirectoryName(oldPath), newFileName);
 
@@ -1165,7 +1214,7 @@ namespace MeleeImprooverApp
 
                 Dictionary<string, int> connectCodeCounts = new Dictionary<string, int>();
 
-               
+
                 foreach (DataGridViewRow row in dataGridView1.SelectedRows)
                 {
                     SlippiEntry entry = row.DataBoundItem as SlippiEntry;
@@ -1212,11 +1261,11 @@ namespace MeleeImprooverApp
                         totalClipsP2 += entry.numClipsP2;
                     }
                 }
-                
+
 
                 var sortedConnectCodeClipNums = connectCodeCounts.OrderByDescending(pair => pair.Value).Take(3).ToList();
 
-                if( dataGridView1.SelectedRows.Count > 1 )
+                if (dataGridView1.SelectedRows.Count > 1)
                 {
                     foreach (var pair in sortedConnectCodeClipNums)
                     {
@@ -1226,23 +1275,23 @@ namespace MeleeImprooverApp
                     }
                 }
 
-                if ( totalClipsP1 > 0)
+                if (totalClipsP1 > 0)
                 {
                     ToolStripMenuItem exportP1 = new ToolStripMenuItem("Export " + totalClipsP1 + " States from Player 1");
                     exportP1.Click += (s, ev) => ExportP1();
                     menu.Items.Add(exportP1);
                 }
-                
-                if( totalClipsP2 > 0 )
+
+                if (totalClipsP2 > 0)
                 {
                     ToolStripMenuItem exportP2 = new ToolStripMenuItem("Export " + totalClipsP2 + " States from Player 2");
                     exportP2.Click += (s, ev) => ExportP2();
                     menu.Items.Add(exportP2);
                 }
 
-                if(dataGridView1.SelectedRows.Count == 1 )
+                if (dataGridView1.SelectedRows.Count == 1)
                 {
-                    
+
 
                     string path = null;
                     foreach (DataGridViewRow row in dataGridView1.SelectedRows)
@@ -1253,7 +1302,7 @@ namespace MeleeImprooverApp
 
                     }
 
-                    if( path != null )
+                    if (path != null)
                     {
                         ToolStripMenuItem openReplay = new ToolStripMenuItem("Open Slippi Replay");
                         openReplay.Click += (s, ev) => OpenReplay(path);
@@ -1264,12 +1313,12 @@ namespace MeleeImprooverApp
                         menu.Items.Add(goFile);
                     }
                 }
-                
+
 
                 // Show the menu
                 menu.Show(dataGridView1, new Point(e.X, e.Y));
 
-                
+
             }
         }
 
@@ -1283,7 +1332,7 @@ namespace MeleeImprooverApp
             ExportFromPlayer(1);
         }
 
-        private void ExportFromConnectCode( string connectCode )
+        private void ExportFromConnectCode(string connectCode)
         {
             if (exportFolderPath == null)
             {
@@ -1307,13 +1356,13 @@ namespace MeleeImprooverApp
             if (int.TryParse(clipLengthTextBox.Text.Trim(), out foundLength))
             {
                 clipLength = foundLength;
-                // It's a valid integer â€” use it
+                // It's a valid integer — use it
                 //Console.WriteLine($"User entered: {parsedValue}");
             }
             else
             {
                 MessageBox.Show("clip length was not valid. Setting to default");
-                // Invalid input â€” optionally do nothing or handle it
+                // Invalid input — optionally do nothing or handle it
                 // Console.WriteLine("Invalid number, ignoring input.");
 
                 clipLengthTextBox.TextChanged -= clipLengthTextBox_TextChanged;
@@ -1333,14 +1382,14 @@ namespace MeleeImprooverApp
             foreach (DataGridViewRow row in dataGridView1.SelectedRows)
             {
                 SlippiEntry entry = row.DataBoundItem as SlippiEntry;
-                if (entry != null )
+                if (entry != null)
                 {
-                    if( entry.p1ConnectCode == connectCode )
+                    if (entry.p1ConnectCode == connectCode)
                     {
                         totalExportedClips += entry.numClipsP1;
                         currPIndex = 0;
                     }
-                    else if( entry.p2ConnectCode == connectCode )
+                    else if (entry.p2ConnectCode == connectCode)
                     {
                         totalExportedClips += entry.numClipsP2;
                         currPIndex = 1;
@@ -1358,7 +1407,7 @@ namespace MeleeImprooverApp
             Process.Start("explorer.exe", $"/select,\"{filePath}\"");
         }
 
-        private void OpenReplay( string filePath )
+        private void OpenReplay(string filePath)
         {
             Process.Start("explorer.exe", filePath);
         }
@@ -1367,7 +1416,7 @@ namespace MeleeImprooverApp
         {
             if (dataGridView1.SelectedRows.Count > 0)
             {
-               // int rowIndex = dataGridView1.SelectedRows[0].Index;
+                // int rowIndex = dataGridView1.SelectedRows[0].Index;
                 // Remove from underlying data source if bound
                 // Example: entries.RemoveAt(rowIndex);
             }
@@ -1387,7 +1436,7 @@ namespace MeleeImprooverApp
                 }
             }
 
-           // totalClipsLabel.Text = "Selected P1 Save States: " + totalClipsP1 + "           Selected P2 Save States: " + totalClipsP2;
+            // totalClipsLabel.Text = "Selected P1 Save States: " + totalClipsP1 + "           Selected P2 Save States: " + totalClipsP2;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -1846,19 +1895,19 @@ namespace MeleeImprooverApp
 
             //MessageBox.Show(allEntries.Count.ToString());
             int oldCount = allEntries.Count;
-            for ( int i = 0; i < files.Length; ++i )
+            for (int i = 0; i < files.Length; ++i)
             {
                 if (File.Exists(files[i]))
                 {
-                   
-                   if( Path.GetExtension(files[i]).Equals(".slp", StringComparison.OrdinalIgnoreCase))
-                   {
+
+                    if (Path.GetExtension(files[i]).Equals(".slp", StringComparison.OrdinalIgnoreCase))
+                    {
                         AddEntry(files[i]);
                     }
                 }
             }
 
-            if( allEntries.Count > oldCount )
+            if (allEntries.Count > oldCount)
             {
                 int adds = allEntries.Count - oldCount;
 
@@ -1897,8 +1946,6 @@ namespace MeleeImprooverApp
                 //Console.WriteLine($"Error opening URL: {ex.Message}");
                 MessageBox.Show("URL was invalid");
             }
-
-            
         }
 
         private void aitchPatreonLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -1919,9 +1966,268 @@ namespace MeleeImprooverApp
                 MessageBox.Show("URL was invalid");
             }
         }
+
+#nullable enable // a temporary refuge
+        private DolphinConnection? _dolphinConnection;
+        private SlpFileWriter? _tmpFileWriter;
+        private SlippiGame? _game;
+
+        // Assumption: Every method aside from the button handlers is free-threaded and should Invoke/BeginInvoke to the 
+        //             main thread when handling UI controls.
+
+        private void DolphinConnectButton_Click(object sender, EventArgs e)
+        {
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    ResetDolphinConnection();
+
+                    DirectoryInfo tempDir = Directory.CreateTempSubdirectory();
+                    _tmpFileWriter = new SlpFileWriter(new SlpFileWriterSettings()
+                    {
+                        FolderPath = tempDir.FullName
+                    });
+                    _tmpFileWriter.OnNewFile += FileWriterOnNewFile;
+
+                    _dolphinConnection = new DolphinConnection();
+                    _dolphinConnection.OnData += DolphinOnData;
+                    _dolphinConnection.OnStatusChange += DolphinOnStatusChanged;
+
+                    _dolphinConnection.Connect("127.0.0.1", (int)Ports.Default, isRealtime: true, timeout: 100);
+                }
+                catch
+                {
+                    ResetDolphinConnection();
+                }
+            });
+        }
+
+        private void DolphinOnData(object? sender, byte[] data) => _tmpFileWriter?.Write(data);
+
+        private void DolphinOnStatusChanged(object? sender, ConnectionStatus status)
+        {
+            Invoke(() =>
+            {
+                if (status == ConnectionStatus.Connecting)
+                {
+                    DolphinStatusCircle.SetColor(Color.Yellow);
+                }
+                else if (status == ConnectionStatus.Connected)
+                {
+                    DolphinStatusCircle.SetColor(Color.Green);
+                    ExportP1DolphinButton.Enabled = true;
+                    ExportP2DolphinButton.Enabled = true;
+                }
+                else if (status == ConnectionStatus.Disconnected)
+                {
+                    ResetDolphinConnection();
+                }
+            });
+        }
+
+        private void FileWriterOnNewFile(object? sender, string filePath)
+        {
+            _game = new SlippiGame(filePath, options: new StatOptions()
+            {
+                ProcessOnTheFly = true
+            });
+            _game.GetStats();
+
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(300);
+                BeginInvoke(() =>
+                {
+                    try
+                    {
+                        if (_game is not null)
+                        {
+                            var settings = _game.GetSettings();
+                            if (settings is null)
+                            {
+                                return;
+                            }
+
+                            PlayerIndices? indices = StatsUtils.GetSinglesPlayerPermutationsFromSettings(settings)
+                                .FirstOrDefault(p => p.PlayerIndex < p.OpponentIndex);
+                            if (indices is null)
+                            {
+                                return;
+                            }
+
+                            DolphinP1Label.Text = MakeCharacterString(
+                                ConvertCharacter(settings.Players[indices.PlayerIndex].Character!.Value),
+                                settings.Players[indices.PlayerIndex].CharacterColor!.Value,
+                                ConvertCharacter(settings.Players[indices.OpponentIndex].Character!.Value));
+
+                            DolphinP2Label.Text = MakeCharacterString(
+                                ConvertCharacter(settings.Players[indices.OpponentIndex].Character!.Value),
+                                settings.Players[indices.OpponentIndex].CharacterColor!.Value,
+                                ConvertCharacter(settings.Players[indices.PlayerIndex].Character!.Value));
+                        }
+                    } catch { }
+                });
+            });
+        }
+
+        private void ResetDolphinConnection()
+        {
+            if (_dolphinConnection is not null)
+            {
+                _dolphinConnection.OnData -= DolphinOnData;
+                _dolphinConnection.OnStatusChange -= DolphinOnStatusChanged;
+
+                _dolphinConnection.Dispose();
+                _dolphinConnection = null;
+            }
+
+            if (_tmpFileWriter is not null)
+            {
+                _tmpFileWriter.OnNewFile -= FileWriterOnNewFile;
+                _tmpFileWriter.Dispose();
+                _tmpFileWriter = null;
+            }
+
+            _game?.Dispose();
+            _game = null;
+
+            Invoke(() =>
+            {
+                DolphinStatusCircle.SetColor(Color.Red);
+                ExportP1DolphinButton.Enabled = false;
+                ExportP2DolphinButton.Enabled = false;
+
+                DolphinP1Label.Text = string.Empty;
+                DolphinP2Label.Text = string.Empty;
+            });
+        }
+
+        private void ExportP1DolphinButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (!Directory.Exists(exportFolderPath))
+                {
+                    MessageBox.Show("Invalid or missing export folder path");
+                    return;
+                }
+
+                if (_game is null || _game.GetLatestFrame()?.Frame is not int currentFrame)
+                {
+                    MessageBox.Show("Failed to get current frame from game");
+                    return;
+                }
+
+                SlippiEntry? se = CreateSlippiEntryFromGame();
+                if (se is not null)
+                {
+                    CreateSaveStates(exportFolderPath, se.filePath, se.gameName, 360, se.p1Index, currentFrame);
+                    MessageBox.Show($"Created savestate in {exportFolderPath}");
+                }
+            }
+            catch { }
+        }
+
+        private void ExportP2DolphinButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (!Directory.Exists(exportFolderPath))
+                {
+                    MessageBox.Show("Invalid or missing export folder path");
+                    return;
+                }
+
+                if (_game is null || _game.GetLatestFrame()?.Frame is not int currentFrame)
+                {
+                    MessageBox.Show("Failed to get current frame from game");
+                    return;
+                }
+
+                SlippiEntry? se = CreateSlippiEntryFromGame();
+                if (se is not null)
+                {
+                    CreateSaveStates(exportFolderPath, se.filePath, se.gameName, 360, se.p2Index, currentFrame);
+                    MessageBox.Show($"Created savestate in {exportFolderPath}");
+                }
+            }
+            catch { }
+        }
+
+        private SlippiEntry? CreateSlippiEntryFromGame()
+        {
+            if (_game is null)
+            {
+                MessageBox.Show("No active game detected");
+                return null;
+            }
+
+            GameStart? settings = _game.GetSettings();
+            if (settings is null)
+            {
+                MessageBox.Show("Failed to get players from active game");
+                return null;
+            }
+
+            PlayerIndices? indices = StatsUtils.GetSinglesPlayerPermutationsFromSettings(settings)
+                .FirstOrDefault(p => p.PlayerIndex < p.OpponentIndex);
+            if (indices is null)
+            {
+                MessageBox.Show("Failed to get players");
+                return null;
+            }
+
+            return CreateSlippiEntry(_game.GetFilePath()!,
+                indices.PlayerIndex,
+                indices.OpponentIndex,
+                ConvertCharacter(settings.Players[indices.PlayerIndex].Character!.Value),
+                ConvertCharacter(settings.Players[indices.OpponentIndex].Character!.Value),
+                settings.Players[indices.PlayerIndex].CharacterColor!.Value,
+                settings.Players[indices.OpponentIndex].CharacterColor!.Value,
+                (Stage)settings.Stage!,
+                settings.Players[indices.PlayerIndex].ConnectCode,
+                settings.Players[indices.OpponentIndex].ConnectCode,
+                (ulong)DateTime.Now.ToFileTimeUtc(),
+                _game.GetLatestFrame()?.Frame ?? 0,
+                isPlayback: true);
+        }
+
+        // Convert the game character ids to this apps character ids
+        private Character ConvertCharacter(LibCharacter libCharacter) =>
+            libCharacter switch
+            {
+                LibCharacter.CaptainFalcon => Character.CaptainFalcon,
+                LibCharacter.DonkeyKong => Character.DonkeyKong,
+                LibCharacter.Fox => Character.Fox,
+                LibCharacter.GameAndWatch => Character.MrGameAndWatch,
+                LibCharacter.Kirby => Character.Kirby,
+                LibCharacter.Bowser => Character.Bowser,
+                LibCharacter.Link => Character.Link,
+                LibCharacter.Sheik => Character.Sheik,
+                LibCharacter.Ness => Character.Ness,
+                LibCharacter.Peach => Character.Peach,
+                LibCharacter.Popo => Character.Popo,
+                LibCharacter.IceClimbers => Character.Nana,
+                LibCharacter.Pikachu => Character.Pikachu,
+                LibCharacter.Samus => Character.Samus,
+                LibCharacter.Yoshi => Character.Yoshi,
+                LibCharacter.JigglyPuff => Character.Jigglypuff,
+                LibCharacter.Mewtwo => Character.Mewtwo,
+                LibCharacter.Luigi => Character.Luigi,
+                LibCharacter.Marth => Character.Marth,
+                LibCharacter.Zelda => Character.Zelda,
+                LibCharacter.YoungLink => Character.YoungLink,
+                LibCharacter.DrMario => Character.DrMario,
+                LibCharacter.Falco => Character.Falco,
+                LibCharacter.Pichu => Character.Pichu,
+                LibCharacter.Ganondorf => Character.Ganondorf,
+                LibCharacter.Roy => Character.Roy,
+                _ => throw new ArgumentOutOfRangeException(nameof(libCharacter), libCharacter, null)
+            };
+
+#nullable disable
     }
-
-
 }
 
 public class SlippiEntry
@@ -1942,6 +2248,8 @@ public class SlippiEntry
     public int[] clipFramesP2 { get; set; }
     public string p1ConnectCode { get; set; }
     public string p2ConnectCode { get; set; }
+    public int p1Index { get; set; }
+    public int p2Index { get; set; }
 }
 
 struct TimeFields
@@ -1967,7 +2275,7 @@ struct TimeFields
             //return local.ToString("MMMM d, yyyy  -  h:mm tt");
             //return local.ToString("MM / dd / yy - h:mm tt");//  -  h:mm tt");
             return local.ToString("yyyy-MM-dd - h:mm tt");//  -  h:mm tt");
-           
+
         }
         catch (ArgumentOutOfRangeException)
         {
@@ -1979,8 +2287,8 @@ struct TimeFields
         //return local.ToString("MMMM d, yyyy  -  h:mm tt");
     }
     //new DateTime(year, month, day, hour, minute, second)
-     //   .ToString("MMMM d, yyyy  -  h:mm tt");
-    public TimeFields( UInt64 t )
+    //   .ToString("MMMM d, yyyy  -  h:mm tt");
+    public TimeFields(UInt64 t)
     {
         year = (ushort)(t >> 48);
         month = (byte)((t >> 40) & 0xFF);

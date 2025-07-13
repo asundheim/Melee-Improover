@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "MeleeImprooverApp": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

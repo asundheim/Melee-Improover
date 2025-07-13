@@ -17,7 +17,7 @@
 		<RustConfiguration>--release</RustConfiguration>
 	</PropertyGroup>
 	<PropertyGroup>
-		<SlippiAnalyzerDir>..\slippi_analyzer</SlippiAnalyzerDir>
+		<SlippiAnalyzerDir>..\..\slippi_analyzer</SlippiAnalyzerDir>
 		<SlippiAnalyzerBinary>$(SlippiAnalyzerDir)\target\$(SlippiAnalyzerBin)\slippi_analyzer.dll</SlippiAnalyzerBinary>
 		<SlippiAnalyzerPdb>$(SlippiAnalyzerDir)\target\$(SlippiAnalyzerBin)\slippi_analyzer.pdb</SlippiAnalyzerPdb>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -33,7 +33,7 @@
 		<SlippiAnalyzerSource Include="$(SlippiAnalyzerDir)\Cargo.toml" />
 		
 		<!--Have to do it like this to make the top-level folder show up in Solution Explorer-->
-		<Content Include="..\**\slippi_analyzer\**\*.*" UpToDateCheckInput="true" />
+		<Content Include="..\..\**\slippi_analyzer\**\*.*" UpToDateCheckInput="true" />
 		<Content Update="$(SlippiAnalyzerBinary)" CopyToPublishDirectory="Always" Link="%(Filename)%(Extension)" Visible="false"/>
 		
 		<!--Dark magic to make it not rebuild unless source files change-->

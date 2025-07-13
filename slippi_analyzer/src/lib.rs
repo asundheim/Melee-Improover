@@ -27,8 +27,6 @@ pub struct GameInfoSafe {
 
     pub port_used: [bool; 4],
 
-    
-
     pub starting_character_colours: [CharacterColourSafe; 4],
 
     //pub starting_character_colours: [Option<CharacterColour>; 4],
